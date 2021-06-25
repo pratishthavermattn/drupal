@@ -38,21 +38,21 @@ module "security_group_asg" {
       to_port     = 80
       protocol    = "tcp"
       description = "HTTP"
-      cidr_blocks = "205.254.162.221/32"
+      cidr_blocks = "205.254.162.232/32"
     },
     {
       from_port   = 22
       to_port     = 22
       protocol    = "tcp"
       description = "SSH"
-      cidr_blocks = "205.254.162.221/32"
+      cidr_blocks = "205.254.162.232/32"
     },
     {
       from_port   = 2049
       to_port     = 2049
       protocol    = "tcp"
       description = "NFS"
-      cidr_blocks = "205.254.162.221/32"
+      cidr_blocks = "205.254.162.232/32"
     },
     {
       from_port   = 0
@@ -66,7 +66,7 @@ module "security_group_asg" {
       to_port     = 8080
       protocol    = "tcp"
       description = "HTTP"
-      cidr_blocks = "205.254.162.221/32"
+      cidr_blocks = "205.254.162.232/32"
     }
   ]
 }
@@ -92,7 +92,7 @@ module "security_group_rds" {
       to_port     = 65535
       protocol    = "tcp"
       description = "All TCP"
-      cidr_blocks = "205.254.162.221/32"
+      cidr_blocks = "205.254.162.232/32"
     }
   ]
 
@@ -160,24 +160,96 @@ module "test_alb" {
 
 module "drupal" {
   source = "../terraform-aws-drupal/"
-  #demo          = module.vpc.public_sn_asg
-  
-  vpc_drupal           = module.vpc.vpc_id
-  sec_group_drupal_rds = module.security_group_rds.security_group_id
-  subnet_drupal_rds    = module.vpc.public_subnets
 
-  subnet_drupal_asg    = module.vpc.public_subnets
-  sec_group_drupal_asg = module.security_group_asg.security_group_id
+  #target_group_drupal  = module.test_alb.target_group_arns
 
-  vpc_drupal_alb       = module.vpc.vpc_id
-  sec_group_drupal_alb = module.security_group_asg.security_group_id
-  subnet_drupal_alb    = module.vpc.public_subnets
+  #ASG Variables
 
-  subnet_drupal_efs    = module.vpc.public_subnets
-  sec_group_drupal_efs = module.security_group_asg.security_group_id
-  vpc_drupal_efs       = module.vpc.vpc_id  
+  asg_subnet_drupal    = module.vpc.public_subnets
+  asg_sec_group_drupal = module.security_group_asg.security_group_id
 
-  #target_group_drupal  = var.create ? var.xyz : module.test_alb.target_group_arns 
-  
-  target_group_drupal  = module.test_alb.target_group_arns
+  asg_name                      = var.asg_name
+  asg_min_size                  = var.asg_min_size
+  asg_max_size                  = var.asg_max_size
+  asg_desired_capacity          = var.asg_desired_capacity
+  asg_wait_for_capacity_timeout = var.asg_wait_for_capacity_timeout
+  asg_health_check_type         = var.asg_health_check_type
+  asg_lt_name                   = var.asg_lt_name
+  asg_description               = var.asg_description
+  asg_use_lt                    = var.asg_use_lt
+  asg_create_lt                 = var.asg_create_lt
+  asg_image_id                  = var.asg_image_id
+  asg_instance_type             = var.asg_instance_type
+  asg_key_name                  = var.asg_key_name
+  asg_health_check_grace_period = var.asg_health_check_grace_period
+
+
+  #DB Variables 
+
+  rds_sec_group_drupal = module.security_group_rds.security_group_id
+  rds_subnet_drupal    = module.vpc.public_subnets
+
+  rds_identifier_source          = var.rds_identifier_source
+  rds_engine                     = var.rds_engine
+  rds_engine_version             = var.rds_engine_version
+  rds_instance_class_source      = var.rds_instance_class_source
+  rds_allocated_storage          = var.rds_allocated_storage
+  rds_max_allocated_storage      = var.rds_max_allocated_storage
+  rds_name_source                = var.rds_name_source
+  rds_username                   = var.rds_username
+  rds_password                   = var.rds_password
+  rds_port                       = var.rds_port
+  rds_parameter_group_name       = var.rds_parameter_group_name
+  rds_create_db_parameter_group  = var.rds_create_db_parameter_group
+  rds_create_db_option_group     = var.rds_create_db_option_group
+  rds_maintenance_window_source  = var.rds_maintenance_window_source
+  rds_backup_window_source       = var.rds_backup_window_source
+  rds_backup_retention_period    = var.rds_backup_retention_period
+  rds_skip_final_snapshot_source = var.rds_skip_final_snapshot_source
+  rds_identifier_read            = var.rds_identifier_read
+  rds_name_read                  = var.rds_name_read
+  rds_instance_class_read        = var.rds_instance_class_read
+  rds_maintenance_window_read    = var.rds_maintenance_window_read
+  rds_backup_window_read         = var.rds_backup_window_read
+  rds_skip_final_snapshot_read   = var.rds_skip_final_snapshot_read
+  rds_create_db_subnet_group     = var.rds_create_db_subnet_group
+
+
+  #EFS Variables
+
+  efs_vpc_drupal       = module.vpc.vpc_id
+  efs_subnet_drupal    = module.vpc.public_subnets
+  efs_sec_group_drupal = module.security_group_asg.security_group_id
+
+  efs_namespace = var.efs_namespace
+  efs_stage     = var.efs_stage
+  efs_name      = var.efs_name
+  efs_region    = var.efs_region
+
+
+  #ALB Variables
+
+  alb_vpc_drupal       = module.vpc.vpc_id
+  alb_sec_group_drupal = module.security_group_asg.security_group_id
+  alb_subnet_drupal    = module.vpc.public_subnets
+
+  alb_name                                                = var.alb_name
+  alb_load_balancer_type                                  = var.alb_load_balancer_type
+  alb_target_groups_name                                  = var.alb_target_groups_name
+  alb_target_groups_backend_protocol                      = var.alb_target_groups_backend_protocol
+  alb_target_groups_backend_port                          = var.alb_target_groups_backend_port
+  alb_target_groups_target_type                           = var.alb_target_groups_target_type
+  alb_target_groups_health_check_enabled                  = var.alb_target_groups_health_check_enabled
+  alb_target_groups_health_check_interval                 = var.alb_target_groups_health_check_interval
+  alb_target_groups_health_check_path                     = var.alb_target_groups_health_check_path
+  alb_target_groups_health_check_port                     = var.alb_target_groups_health_check_port
+  alb_target_groups_health_check_healthy_threshold        = var.alb_target_groups_health_check_healthy_threshold
+  alb_target_groups_health_check_unhealthy_threshold      = var.alb_target_groups_health_check_unhealthy_threshold
+  alb_target_groups_health_check_timeout                  = var.alb_target_groups_health_check_timeout
+  alb_target_groups_health_check_protocol                 = var.alb_target_groups_health_check_protocol
+  alb_target_groups_health_check_matcher                  = var.alb_target_groups_health_check_matcher
+  alb_target_groups_http_tcp_listeners_port               = var.alb_target_groups_http_tcp_listeners_port
+  alb_target_groups_http_tcp_listeners_protocol           = var.alb_target_groups_http_tcp_listeners_protocol
+  alb_target_groups_http_tcp_listeners_target_group_index = var.alb_target_groups_http_tcp_listeners_target_group_index
+  alb_target_groups_http_tcp_listeners_action_type        = var.alb_target_groups_http_tcp_listeners_action_type
 }
